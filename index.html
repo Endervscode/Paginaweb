@@ -3,10 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galaxia de San Valentín 3D - Textos pequeños y billboard</title>
+    <title>Te Amo Negra 💛</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Arial', sans-serif; }
         canvas { display: block; }
+
+        /* Mensaje Principal */
+        #main-message {
+            position: absolute;
+            top: 15%;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff1493, 0 0 20px #ff1493, 0 0 40px #ff1493;
+            pointer-events: none;
+            z-index: 10;
+            animation: float 3s ease-in-out infinite;
+        }
+
+                @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
 
                 /* Controles de Audio */
         #ui-container {
@@ -33,7 +53,7 @@
             transition: transform 0.2s;
         }
 
-        #music-btn:hover { transform: scale(1.2); }
+        #ui-container:hover { background: rgba(255, 20, 147, 0.4); scale: 1.05; }
 
         #instructions {
             position: absolute;
@@ -48,6 +68,8 @@
     </style>
 </head>
 <body>
+
+    <div id="main-message">Feliz 14/02 Mi Negra 💛</div>
 
 <div id="ui-container">
     <span style="color: white; font-size: 12px; font-weight: bold;">MÚSICA</span>
