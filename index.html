@@ -3,10 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Te Amo Mi Negra💛</title>
+    <title>Galaxia de San Valentín 3D - Textos pequeños y billboard</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Arial', sans-serif; }
         canvas { display: block; }
+
+                /* Controles de Audio */
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 20, 147, 0.2);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 105, 180, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        #music-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+            transition: transform 0.2s;
+        }
+
+        #music-btn:hover { transform: scale(1.2); }
+
         #instructions {
             position: absolute;
             bottom: 20px;
@@ -16,11 +44,20 @@
             pointer-events: none;
             font-size: 14px;
             text-shadow: 0 0 6px #ff1493;
-            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
+
+<div id="ui-container">
+    <span style="color: white; font-size: 12px; font-weight: bold;">MÚSICA</span>
+    <button id="music-btn">🔇</button>
+</div>
+
+<audio id="bg-music" loop>
+    <source src="https://raw.githubusercontent.com/Endervscode/Paginaweb/main/ssstik.io_1771037626035.mp3" type="audio/mpeg">
+    Tu navegador no soporta audio.
+</audio>
 
 <script type="importmap">
     {
@@ -35,10 +72,28 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    // --- Configuración Escena ---
+        // --- Lógica de Audio ---
+    const music = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('music-btn');
+    let isPlaying = false;
+
+    musicBtn.addEventListener('click', () => {
+        if (!isPlaying) {
+            music.play();
+            musicBtn.innerText = "🔊";
+            isPlaying = true;
+        } else {
+            music.pause();
+            musicBtn.innerText = "🔇";
+            isPlaying = false;
+        }
+    });
+
+    // --- Configuración Escena Three.js ---
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 100, 250);
+    camera.position.set(0, 80, 220);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -47,11 +102,12 @@
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
 
-    // --- Agujero Negro Central ---
+    // Agujero negro
     const holeGroup = new THREE.Group();
-    const coreGeo = new THREE.SphereGeometry(14, 32, 32);
+    const coreGeo = new THREE.SphereGeometry(12, 32, 32);
     const coreMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
     holeGroup.add(new THREE.Mesh(coreGeo, coreMat));
 
@@ -64,41 +120,36 @@
         depthWrite: false
     });
     const centralGlow = new THREE.Sprite(spriteMaterial);
-    centralGlow.scale.set(120, 120, 1);
+    centralGlow.scale.set(100, 100, 1);
     holeGroup.add(centralGlow);
     scene.add(holeGroup);
 
-    // --- Estrellas con Movimiento Orbital ---
-    const starCount = 15000;
+    // Estrellas
     const starGeometry = new THREE.BufferGeometry();
-    const starPositions = new Float32Array(starCount * 3);
-    const starData = []; // Guardaremos radio, ángulo y velocidad
+    const starCount = 18000;
+    const posArray = new Float32Array(starCount * 3);
 
     for (let i = 0; i < starCount; i++) {
-        const radius = 45 + Math.random() * 200;
+        const i3 = i * 3;
+        const radius = 40 + Math.random() * 180;
         const angle = Math.random() * Math.PI * 2;
-        const speed = (0.0005 + Math.random() * 0.001) * (150 / radius); // Más rápido cerca del centro
-        const y = (Math.random() - 0.5) * (60 * (1 - radius/250)); // Más plano en los bordes
+        const yOffset = (Math.random() - 0.5) * 50;
 
-        starData.push({ radius, angle, speed, y });
-
-        starPositions[i * 3] = radius * Math.cos(angle);
-        starPositions[i * 3 + 1] = y;
-        starPositions[i * 3 + 2] = radius * Math.sin(angle);
+        posArray[i3]     = radius * Math.cos(angle);
+        posArray[i3 + 1] = yOffset;
+        posArray[i3 + 2] = radius * Math.sin(angle);
     }
 
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
     const starMaterial = new THREE.PointsMaterial({
-        size: 0.8,
+        size: 0.7,
         color: 0xffffff,
         transparent: true,
-        opacity: 0.7,
-        blending: THREE.AdditiveBlending
+        opacity: 0.8
     });
-    const starPoints = new THREE.Points(starGeometry, starMaterial);
-    scene.add(starPoints);
+    scene.add(new THREE.Points(starGeometry, starMaterial));
 
-    // --- Frases Flotantes (Billboards) ---
+    // ── FRASES ── pequeñas, aleatorias en la zona, siempre mirando a cámara
     const phrases = [
         "💛", "Eres mi mundo", "Te amo💛", "Feliz San Valentín", "💖", "🐻", "Siempre juntos",
         "Al infinito", "Tú y yo", "Mi persona favorita", "Contigo todo es mejor",
@@ -120,36 +171,32 @@
         "Mi estrella más brillante💛", "Eres mi inspiración", "Juntos somos magia", "Te amo más que ayer",
     ];
 
-    const textMeshes = [];
-    const textData = [];
+    const textsGroup = new THREE.Group();
+    scene.add(textsGroup);
+
+    const textMeshes = []; // guardamos referencias para actualizar orientación
 
     phrases.forEach((text) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = 512;
+        canvas.width = 512;   // más pequeño
         canvas.height = 128;
 
-        // Estilo del Texto
-        ctx.font = "Bold 44px Arial";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        
-        // Borde para legibilidad
-        ctx.strokeStyle = "rgba(0,0,0,0.8)";
-        ctx.lineWidth = 6;
-        ctx.strokeText(text, 256, 64);
-
+        ctx.font = "Bold 52px Arial";  // fuente más pequeña
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
         gradient.addColorStop(0, "#ff69b4");
         gradient.addColorStop(0.5, "white");
         gradient.addColorStop(1, "#ff69b4");
 
         ctx.fillStyle = gradient;
-        ctx.shadowColor = "#ff1493";
-        ctx.shadowBlur = 15;
+        ctx.shadowColor = "rgba(255, 20, 147, 0.8)";
+        ctx.shadowBlur = 12;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillText(text, 256, 64);
 
         const texture = new THREE.CanvasTexture(canvas);
+
         const mat = new THREE.MeshBasicMaterial({
             map: texture,
             transparent: true,
@@ -158,17 +205,21 @@
             blending: THREE.AdditiveBlending
         });
 
-        const geometry = new THREE.PlaneGeometry(30, 7.5);
+        // Tamaño mucho más pequeño
+        const geometry = new THREE.PlaneGeometry(28, 7);
+
         const mesh = new THREE.Mesh(geometry, mat);
 
-        // Órbita para los textos
-        const radius = 60 + Math.random() * 130;
+        // Distribución aleatoria en la zona de estrellas
+        const radius = 50 + Math.random() * 140;
         const angle = Math.random() * Math.PI * 2;
-        const speed = 0.002 + Math.random() * 0.003;
-        const y = (Math.random() - 0.5) * 60;
+        const y = (Math.random() - 0.5) * 70;
 
-        textData.push({ radius, angle, speed, y });
-        scene.add(mesh);
+        mesh.position.x = radius * Math.cos(angle);
+        mesh.position.z = radius * Math.sin(angle);
+        mesh.position.y = y;
+
+        textsGroup.add(mesh);
         textMeshes.push(mesh);
     });
 
@@ -186,34 +237,21 @@
         return new THREE.CanvasTexture(canvas);
     }
 
-    // --- Animación Principal ---
+    // Animación
     function animate() {
         requestAnimationFrame(animate);
-        const time = Date.now() * 0.001;
 
-        // 1. Animar Estrellas (Movimiento orbital)
-        const positions = starGeometry.attributes.position.array;
-        for (let i = 0; i < starCount; i++) {
-            const d = starData[i];
-            d.angle += d.speed; 
-            positions[i * 3] = d.radius * Math.cos(d.angle);
-            positions[i * 3 + 2] = d.radius * Math.sin(d.angle);
-        }
-        starGeometry.attributes.position.needsUpdate = true;
+        // Rotación suave del grupo (opcional, da movimiento al conjunto)
+        textsGroup.rotation.y += 0.0008;
 
-        // 2. Animar Textos (Órbita + Mirar a cámara)
-        textMeshes.forEach((mesh, i) => {
-            const d = textData[i];
-            d.angle += d.speed * 0.5;
-            mesh.position.x = d.radius * Math.cos(d.angle);
-            mesh.position.z = d.radius * Math.sin(d.angle);
-            mesh.position.y = d.y + Math.sin(time + i) * 2; // Pequeño balanceo vertical
+        // Cada texto mira SIEMPRE a la cámara
+        textMeshes.forEach(mesh => {
             mesh.lookAt(camera.position);
+
         });
 
-        // 3. Latido del centro
-        const pulse = 1 + Math.sin(time * 3) * 0.1;
-        centralGlow.scale.set(120 * pulse, 120 * pulse, 1);
+        const p = Date.now() * 0.003;
+        centralGlow.scale.set(100 + Math.sin(p)*12, 100 + Math.sin(p)*12, 1);
 
         controls.update();
         renderer.render(scene, camera);
@@ -229,5 +267,3 @@
 </script>
 </body>
 </html>
-
-
