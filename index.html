@@ -1,22 +1,222 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Para tí 🫠</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaxia de San Valentín 3D - Dinámica</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Arial', sans-serif; }
+        canvas { display: block; }
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 105, 180, 0.7);
+            pointer-events: none;
+            font-size: 14px;
+            text-shadow: 0 0 6px #ff1493;
+            letter-spacing: 1px;
+        }
+    </style>
 </head>
-<body>    <!-- Dedicatoria -->
-<div class="card active">
-  <h2> Para ti </h2>
-  <p>
-    Flores para una flor 💛
-  </p>
-  <div class="flowers">
-    <img src="img/flores.png" alt="Flores amarillas">
-  </div>
-</div>
-  <!-- Indicadores de progreso -->
-  <div class="progress"></div>
-  <script src="script.js"></script>
+<body>
+
+<div id="instructions">Usa el mouse para orbitar y la rueda para Zoom 💖</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // --- Configuración Escena ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 100, 250);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // --- Agujero Negro Central ---
+    const holeGroup = new THREE.Group();
+    const coreGeo = new THREE.SphereGeometry(14, 32, 32);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    holeGroup.add(new THREE.Mesh(coreGeo, coreMat));
+
+    const spriteMaterial = new THREE.SpriteMaterial({
+        map: createGlowTexture(),
+        color: 0xff1493,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    const centralGlow = new THREE.Sprite(spriteMaterial);
+    centralGlow.scale.set(120, 120, 1);
+    holeGroup.add(centralGlow);
+    scene.add(holeGroup);
+
+    // --- Estrellas con Movimiento Orbital ---
+    const starCount = 15000;
+    const starGeometry = new THREE.BufferGeometry();
+    const starPositions = new Float32Array(starCount * 3);
+    const starData = []; // Guardaremos radio, ángulo y velocidad
+
+    for (let i = 0; i < starCount; i++) {
+        const radius = 45 + Math.random() * 200;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (0.0005 + Math.random() * 0.001) * (150 / radius); // Más rápido cerca del centro
+        const y = (Math.random() - 0.5) * (60 * (1 - radius/250)); // Más plano en los bordes
+
+        starData.push({ radius, angle, speed, y });
+
+        starPositions[i * 3] = radius * Math.cos(angle);
+        starPositions[i * 3 + 1] = y;
+        starPositions[i * 3 + 2] = radius * Math.sin(angle);
+    }
+
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMaterial = new THREE.PointsMaterial({
+        size: 0.8,
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending
+    });
+    const starPoints = new THREE.Points(starGeometry, starMaterial);
+    scene.add(starPoints);
+
+    // --- Frases Flotantes (Billboards) ---
+    const phrases = [
+        "Eres mi mundo", "Te amo 💛", "Feliz San Valentín", "💖", "🐻", "Siempre juntos",
+        "Al infinito", "Tú y yo", "Mi persona favorita", "Contigo todo es mejor",
+        "Eres mi hogar", "💛", "No imagino un mañana sin ti", "Mi corazón late por ti",
+        "Te elijo siempre", "Eres mi sueño favorito", "Amor eterno", "Mi media naranja",
+        "Eres magia", "Te quiero infinito", "Mi refugio", "Cada latido es tuyo",
+        "Eres mi todo", "Gracias por existir", "Eres mi paz", "Mi lugar seguro",
+        "Te amo en cada universo", "Eres mi estrella", "Juntos somos magia"
+    ];
+
+    const textMeshes = [];
+    const textData = [];
+
+    phrases.forEach((text) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 512;
+        canvas.height = 128;
+
+        // Estilo del Texto
+        ctx.font = "Bold 44px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // Borde para legibilidad
+        ctx.strokeStyle = "rgba(0,0,0,0.8)";
+        ctx.lineWidth = 6;
+        ctx.strokeText(text, 256, 64);
+
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        gradient.addColorStop(0, "#ff69b4");
+        gradient.addColorStop(0.5, "white");
+        gradient.addColorStop(1, "#ff69b4");
+
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = "#ff1493";
+        ctx.shadowBlur = 15;
+        ctx.fillText(text, 256, 64);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        const geometry = new THREE.PlaneGeometry(30, 7.5);
+        const mesh = new THREE.Mesh(geometry, mat);
+
+        // Órbita para los textos
+        const radius = 60 + Math.random() * 130;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.002 + Math.random() * 0.003;
+        const y = (Math.random() - 0.5) * 60;
+
+        textData.push({ radius, angle, speed, y });
+        scene.add(mesh);
+        textMeshes.push(mesh);
+    });
+
+    function createGlowTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128; canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.2, 'rgba(255,20,147,0.6)');
+        grad.addColorStop(0.5, 'rgba(255,20,147,0.1)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 128, 128);
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    // --- Animación Principal ---
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now() * 0.001;
+
+        // 1. Animar Estrellas (Movimiento orbital)
+        const positions = starGeometry.attributes.position.array;
+        for (let i = 0; i < starCount; i++) {
+            const d = starData[i];
+            d.angle += d.speed; 
+            positions[i * 3] = d.radius * Math.cos(d.angle);
+            positions[i * 3 + 2] = d.radius * Math.sin(d.angle);
+        }
+        starGeometry.attributes.position.needsUpdate = true;
+
+        // 2. Animar Textos (Órbita + Mirar a cámara)
+        textMeshes.forEach((mesh, i) => {
+            const d = textData[i];
+            d.angle += d.speed * 0.5;
+            mesh.position.x = d.radius * Math.cos(d.angle);
+            mesh.position.z = d.radius * Math.sin(d.angle);
+            mesh.position.y = d.y + Math.sin(time + i) * 2; // Pequeño balanceo vertical
+            mesh.lookAt(camera.position);
+        });
+
+        // 3. Latido del centro
+        const pulse = 1 + Math.sin(time * 3) * 0.1;
+        centralGlow.scale.set(120 * pulse, 120 * pulse, 1);
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+</script>
 </body>
 </html>
